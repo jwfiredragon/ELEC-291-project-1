@@ -1,5 +1,5 @@
 $NOLIST
-$MODE9351
+$MOD9351
 $LIST
 
 ; TODO: initialization
@@ -21,68 +21,95 @@ BTN_start:  dbit 1 ; TODO: set up button (maybe interrupt?)
 
 main:
     ; TODO: initialization
-    mov FSM_state: #0
+    mov FSM_state, #0
 
 FSM_loop:
     ; TODO: read temperature, time into variables
     ; TODO: check for abort conditions
     mov a, FSM_state
 
-FSM_state0: ; Idle
-    cjne a, #0, FSM_state1
+FSM_0: ; Idle
+    cjne a, #0, FSM_1
     mov Var_power, #0
-    cjne BTN_start, #0, FSM_state0a ; Check if button is pressed
+    mov a, BTN_start
+    cjne a, #0, FSM_0a ; Check if button is pressed
     mov FSM_state, #1 ; Go to state 1 if button is pressed
-    sjmp FSM_state1
-FSM_state0a:
+    ljmp FSM_done
+FSM_0a:
     mov FSM_state, #0 ; Else stay in state 0
+    ljmp FSM_done
 
-FSM_state1: ; Ramp to soak
-    cjne a, #1, FSM_state2
+FSM_1: ; Ramp to soak
+    cjne a, #1, FSM_2
     mov Var_power, #100
     mov a, Var_temp
-    cmp a, TEMP_SOAK
-    bne FSM_state1a ; Check if soak temperature reached
-    mov FSM_state, #2 ; Go to state 2 if soak temperature reached
-    sjmp FSM_state2
-FSM_state1a:
-    mov FSM_state, #1 ; Else stay in state 1
+    cjne a, #TEMP_SOAK, FSM_1b
+    sjmp FSM_1a
+FSM_1b:
+    jc FSM_1a
+    mov FSM_state, #2
+    ljmp FSM_done
+FSM_1a:
+    mov FSM_state, #1
+    ljmp FSM_done
 
-FSM_state2: ; Preheat/soak
-    cjne a, #2, FSM_state3
+FSM_2: ; Preheat/soak
+    cjne a, #2, FSM_3
     mov Var_power, #20
     mov a, Var_sec
-    cmp a, TIME_SOAK
-    bne FSM_state2a ; Check if soak time reached
-    mov FSM_state, #3 ; Go to state 3 if soak time reached
-    sjmp FSM_state2
-FSM_state2a:
-    mov FSM_state, #2 ; Else stay in state 2
+    cjne a, #TIME_SOAK, FSM_2b
+    sjmp FSM_2a
+FSM_2b:
+    jc FSM_2a
+    mov FSM_state, #3
+    ljmp FSM_done
+FSM_2a:
+    mov FSM_state, #2
+    ljmp FSM_done
 
-FSM_state3: ; Ramp to peak
-    cjne a, #3, FSM_state4
+FSM_3: ; Ramp to peak
+    cjne a, #3, FSM_4
     mov Var_power, #100
     mov a, Var_temp
-    cmp a, TEMP_PEAK
-    bne FSM_state3a ; Check if peak temperature reached
-    mov FSM_state, #4 ; Go to state 4 if peak temperature reached
-    sjmp FSM_state4
-FSM_state3a:
-    mov FSM_state, #3 ; Else stay in state 3
+    cjne a, #TEMP_PEAK, FSM_3b
+    sjmp FSM_3a
+FSM_3b:
+    jc FSM_3a
+    mov FSM_state, #4
+    ljmp FSM_done
+FSM_3a:
+    mov FSM_state, #3
+    ljmp FSM_done
 
-FSM_state4: ; Heating at peak
-    cjne a, #4, FSM_state5
+FSM_4: ; Heating at peak
+    cjne a, #4, FSM_5
     mov Var_power, #20
     mov a, Var_sec
-    cmp a, TIME_PEAK
-    bne FSM_state4a ; Check if peak time reached
-    mov FSM_state, #5 ; Go to state 5 if peak time reached
-    sjmp FSM_state5
-FSM_state4a:
-    mov FSM_state, #4 ; Else stay in state 4
+    cjne a, #TIME_PEAK, FSM_4b
+    sjmp FSM_4a
+FSM_4b:
+    jc FSM_4a
+    mov FSM_state, #5
+    ljmp FSM_done
+FSM_4a:
+    mov FSM_state, #4
+    ljmp FSM_done
 
-FSM_state5: ; Cooling down
+FSM_5: ; Cooling down
     cjne a, #5, FSM_done
+    mov Var_power, #0
+    mov a, Var_temp
+    cjne a, #TEMP_COOL, FSM_5b
+    sjmp FSM_5c
+FSM_5b:
+    jc FSM_5a
+FSM_5c:
+    mov FSM_state, #5
+    ljmp FSM_done
+FSM_5a:
+    mov FSM_state, #0
+    ljmp FSM_done
 
 FSM_done:
     ljmp FSM_loop
+    
