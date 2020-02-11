@@ -20,9 +20,9 @@ org 0x0023 ; Serial port receive/transmit
 	reti
 
 dseg at 0x30
-CountSecond:    ds 1
-CountMinute:    ds 1
-CountHour:      ds 1
+count_seconds:    ds 1
+count_minutes:    ds 1
+count_hours:      ds 1
 
 cseg
 ; These 'equ' must match the wiring between the microcontroller and the LCD!
@@ -75,21 +75,75 @@ Inc_Done:
 	
 	; 500 milliseconds have passed.  Set a flag so the main program knows
 	setb half_seconds_flag ; Let the main program know half second had passed
-	cpl TR0 ; Enable/disable timer/counter 0. This line creates a beep-silence-beep-silence sound.
+	;cpl TR0 ; Enable/disable timer/counter 0. This line creates a beep-silence-beep-silence sound.
 	; Reset to zero the 10-milli-seconds counter, it is a 8-bit variable
 	mov Count10ms, #0
 	; Increment the BCD counter
 	mov a, BCD_counter
-	jnb UPDOWN, Timer1_ISR_decrement
+	cjne a, #0x59, reset_sixty ; continue with normal incrementing unless seconds is at 59
+	mov a,BCD_counter
 	add a, #0x01
 	sjmp Timer1_ISR_da
-Timer1_ISR_decrement:
+Timer2_ISR_decrements:
+	mov a,BCD_counter
+	cjne a,#0x00,skip_s
+	mov a,#0x60
+skip_s:
 	add a, #0x99 ; Adding the 10-complement of -1 is like subtracting 1.
-Timer1_ISR_da:
+	mov BCD_counter,a
+Timer2_ISR_da:
 	da a ; Decimal adjust instruction.  Check datasheet for more details!
 	mov BCD_counter, a
-	
-Timer1_ISR_done:
+Timer2_ISR_done:
 	pop psw
 	pop acc
 	reti
+Timer2_ISR_decrementm:
+	mov a,minute
+	cjne a,#0x00,skip_m
+	mov a,#0x60
+skip_m:
+	add a, #0x99 ; Adding the 10-complement of -1 is like subtracting 1.
+	mov minute,a
+	da a ; Decimal adjust instruction.  Check datasheet for more details!
+	mov minute, a
+	ljmp Timer2_ISR_done
+Timer2_ISR_decrementh:
+	mov a,hour
+	cjne a,#0x00,skip_h
+	mov a,#0x13
+skip_h:
+	add a, #0x99 ; Adding the 10-complement of -1 is like subtracting 1.
+	mov hour,a
+	da a
+	mov hour,a
+	ljmp Timer2_ISR_done
+reset_sixty:
+	mov a,minute
+	add a,#1
+	da a	
+	mov minute,a
+	SUBB a,#0x4
+	jz	reset_hour
+	clr TR2                 ; Stop timer 2
+	clr a
+	mov Count1ms+0, a
+	mov Count1ms+1, a
+	; Now clear the BCD counter
+	mov BCD_counter, a
+	setb TR2                ; Start timer 2
+	ljmp Inc_Done             ; Display the new value
+reset_hour:
+	mov minute,#0x00
+	mov a,hour
+	add a,#1
+	da a;
+	mov hour,a	
+	clr TR2                 ; Stop timer 2
+	clr a
+	mov Count1ms+0, a
+	mov Count1ms+1, a
+	; Now clear the BCD counter
+	mov BCD_counter, a
+	setb TR2                ; Start timer 2
+	ljmp Inc_Done  
