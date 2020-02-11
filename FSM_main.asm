@@ -59,6 +59,7 @@ Temp_cool:  ds 2 ; 4
 
 $NOLIST
 $include(LCD_4bit_LPC9351.inc) ; A library of LCD related functions and utility macros
+$include(lcd_4bit.inc)
 $LIST
 
 cseg
