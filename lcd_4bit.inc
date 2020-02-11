@@ -12,8 +12,8 @@ temp_message: db 'temperature is: ',0
 Time_message: db 'Duration:',0
 
 ChangeDisplay mac
-    mov a, #0x01 ;  Clear screen command (takes some time)
-    lcall WriteCommand
+    push AR2
+    WriteCommand(#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
     mov R2, #2
     Wait_Milli_Seconds(#5) ;wait 5ms
@@ -24,6 +24,7 @@ ChangeDisplay mac
     Set_Cursor(1,1)
     Send_Constant_String(#temp_message)
     Display_BCD(Display_number) ;display to lcd
+    pop AR2
 endmac
 
 Regular_display:
@@ -58,6 +59,7 @@ skip_display:;display the temp
     Set_Cursor(2,1)
     Send_Constant_String(#temp_message)
     Display_BCD(Var_temp)
+    ret
 end
 
 

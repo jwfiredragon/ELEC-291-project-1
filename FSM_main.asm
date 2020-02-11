@@ -106,6 +106,7 @@ Incr_value:
     mov a, Val_to_set
     cjne a, #0, IV1
     mov a, Temp_soak
+    ChangeDisplay(Temp_soak)
     cjne a, #255, IV0a
     ret
 IV0a:
@@ -116,6 +117,7 @@ IV0a:
 IV1:
     cjne a, #1, IV2
     mov a, Time_soak
+    ChangeDisplay(Time_soak)
     cjne a, #255, IV1a
     ret
 IV1a:
@@ -126,6 +128,7 @@ IV1a:
 IV2:
     cjne a, #2, IV3
     mov a, Temp_peak
+    ChangeDisplay(Temp_peak)
     cjne a, #255, IV2a
     ret
 IV2a:
@@ -136,6 +139,7 @@ IV2a:
 IV3:
     cjne a, #3, IV4
     mov a, Time_peak
+    ChangeDisplay(Time_peak)
     cjne a, #255, IV3a
     ret
 IV3a:
@@ -146,6 +150,7 @@ IV3a:
 IV4:
     cjne a, #4, IV5
     mov a, Temp_cool
+    ChangeDisplay(Temp_cool)
     cjne a, #255, IV4a
     ret
 IV4a:
@@ -160,6 +165,7 @@ Decr_value:
     mov a, Val_to_set
     cjne a, #0, DV1
     mov a, Temp_soak
+    ChangeDisplay(Temp_soak)
     cjne a, #0, DV0a
     ret
 DV0a:
@@ -170,6 +176,7 @@ DV0a:
 DV1:
     cjne a, #1, DV2
     mov a, Time_soak
+    ChangeDisplay(Time_soak)
     cjne a, #0, DV1a
     ret
 DV1a:
@@ -180,6 +187,7 @@ DV1a:
 DV2:
     cjne a, #2, DV3
     mov a, Temp_peak
+    ChangeDisplay(Temp_peak)
     cjne a, #0, DV2a
     ret
 DV2a:
@@ -190,6 +198,7 @@ DV2a:
 DV3:
     cjne a, #3, DV4
     mov a, Time_peak
+    ChangeDisplay(Time_peak)
     cjne a, #0, DV3a
     ret
 DV3a:
@@ -200,6 +209,7 @@ DV3a:
 DV4:
     cjne a, #4, DV5
     mov a, Temp_cool
+    ChangeDisplay(Temp_cool)
     cjne a, #0, DV4a
     ret
 DV4a:
@@ -278,6 +288,7 @@ FSM_loop:
     
 abortSkip:
     mov a, FSM_state
+    lcall Regular_display
 
 FSM_0: ; Idle
     cjne a, #0, FSM_1
@@ -367,3 +378,4 @@ FSM_5a:
 FSM_done:
     ; TODO: report status
     ljmp FSM_loop
+end
