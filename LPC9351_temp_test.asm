@@ -64,6 +64,41 @@ InitSerialPort:
 	mov	P1M2,#0x00 ; Enable pins RxD and TXD
 	ret
 
+InitADC1:
+    ; Configure pins P0.4, P0.3, P0.2, and P0.1 as inputs
+	orl	P0M1,#0x1E
+	anl	P0M2,#0xE1
+	setb BURST1 ; Autoscan continuos conversion mode
+    mov ADMODB, #00100000B ; Select main clock/2 for ADC/DAC.  Also enable DAC1 output (Table 25 of reference manual)
+	mov	ADINS,#0xF0 ; Select the four channels for conversion
+	mov	ADCON1,#0x05 ; Enable the converter and start immediately
+	; Wait for first conversion to complete
+InitADC1_L1:
+	mov	a,ADCON1
+	jnb	acc.3,InitADC1_L1
+	ret
+
+HexAscii: db '0123456789ABCDEF'
+
+SendHex:
+	mov a, #'0'
+	lcall putchar
+	mov a, #'x'
+	lcall putchar
+	mov dptr, #HexAscii 
+	mov a, b
+	swap a
+	anl a, #0xf
+	movc a, @a+dptr
+	lcall putchar
+	mov a, b
+	anl a, #0xf
+	movc a, @a+dptr
+	lcall putchar
+	mov a, #' '
+	lcall putchar
+	ret
+
 SendString:
     clr a
     movc a, @a+dptr
@@ -94,6 +129,13 @@ MainProgram:
     mov P3M2, #00H
 	
 	lcall InitSerialPort
+
+	lcall InitADC1
+
+	mov dptr, #CLKCON
+    movx a, @dptr
+    orl a, #00001000B ; double the clock speed to 14.746MHz
+    movx @dptr,a
 	
     lcall LCD_4BIT
     ; For convenience a few handy macros are included in 'LCD_4bit_LPC9351.inc':
@@ -117,6 +159,9 @@ Temp:
 
 	;mov DPTR,TEMP_READ
 	;lcall SendString
+	mov	b, AD1DAT0
+	lcall SendHex
+	lcall Wait1S
 	mov DPTR,#Space
 	lcall SendString
 	pop acc
