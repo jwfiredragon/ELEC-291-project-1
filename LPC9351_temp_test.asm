@@ -152,8 +152,10 @@ MainProgram:
 Temp:
 	;mov DPTR,TEMP_READ
 	;lcall SendString
-	mov	b, AD1DAT0
+	mov b, AD1DAT0
+	mov x,AD1DAT0
 	lcall SendHex
+	lcall hex2bcd
 	lcall Wait1S
 	mov DPTR,#Space
 	lcall SendString
