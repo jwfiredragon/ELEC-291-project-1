@@ -3,9 +3,27 @@ $MOD9351
 $LIST
 
 ; TODO: initialization
+; Justin adding tinerrupt shit
 
-CSEG at 0x0000
-	ljmp main
+org 0000H
+ ljmp main
+ 
+; External interrupt 0 vector for pin p1.3
+; this
+org 0x0003
+ ljmp emergency_ISR
+ 
+; Timer/Counter 0 overflow interrupt vector
+org 0x000B
+ ljmp Timer0_ISR
+
+org 001BH
+ ljmp 1803H ; Needed if using the debugger
+; For a 7.373MHz internal oscillator, one machine
+; cycle takes 2/7.373MHz =0.27126us
+
+bseg
+emergency_shutoff: dbit 1
 
 dseg at 0x30
 ; These 'equ' must match the wiring between the microcontroller and the LCD!
@@ -16,6 +34,10 @@ LCD_D4 equ P2.0
 LCD_D5 equ P2.1
 LCD_D6 equ P2.2
 LCD_D7 equ P2.3
+CLK           EQU 7373000  ; Microcontroller system crystal frequency in Hz
+TIMER0_RATE   EQU 100000     ; 2048Hz squarewave (peak amplitude of CEM-1203 speaker)
+TIMER0_RELOAD EQU ((65536-(CLK/(2*TIMER0_RATE))))
+TEMP_THRESHOLD EQU 500
 
 TEMP_READ   equ P2.7
 BTN_START   equ 1 ; TODO: assign port
@@ -40,6 +62,44 @@ $include(LCD_4bit_LPC9351.inc) ; A library of LCD related functions and utility 
 $LIST
 
 cseg
+; interrupt stuff here
+emergency_ISR_Init:
+	setb EX0
+	ret
+
+emergency_ISR:
+	cpl p1.7
+	cpl emergency_shutoff
+	Wait_Milli_Seconds(#150)
+	reti
+	
+;---------------------------------;
+; Routine to initialize the ISR   ;
+; for timer 0                     ;
+;---------------------------------;
+Timer0_Init:
+	mov a, TMOD
+	anl a, #0xf0 ; Clear the bits for timer 0
+	orl a, #0x01 ; Configure timer 0 as 16-timer
+	mov TMOD, a
+	mov TH0, #high(TIMER0_RELOAD)
+	mov TL0, #low(TIMER0_RELOAD)
+	; Enable the timer and interrupts
+    setb ET0  ; Enable timer 0 interrupt
+    setb TR0  ; Start timer 0
+	ret
+
+;---------------------------------;
+; ISR for timer 0.  Set to execute;
+; every 1/4096Hz to generate a    ;
+; 2048 Hz square wave at pin P3.7 ;
+;---------------------------------;
+Timer0_ISR:
+	mov TH0, #high(TIMER0_RELOAD)
+	mov TL0, #low(TIMER0_RELOAD)
+	;cpl heatPin ; Connect speaker to this pin
+	reti
+
 
 Incr_value:
     mov a, Val_to_set
@@ -182,7 +242,21 @@ SRP3:
     ret
 
 main:
-    ; TODO: initialization
+	; initialize
+    mov SP, #7FH
+ 	lcall Timer0_Init ;enable timer0 interrupt
+ 	lcall emergency_ISR_Init ;enable pin12 emergency stop
+ 	setb EA   ; Enable Global interrupts
+    mov P0M1, #00H
+    mov P0M2, #00H
+    mov P1M1, #00H
+    mov P1M2, #00H ; WARNING: P1.2 and P1.3 need 1kohm pull-up resistors!
+    mov P2M1, #00H
+    mov P2M2, #00H
+    mov P3M1, #00H
+    mov P3M2, #00H
+    setb p1.7
+    clr emergency_shutoff
 
     ; Initialize default values for reflow parameter
     mov Temp_soak, #150
@@ -197,6 +271,11 @@ main:
 FSM_loop:
     ; TODO: read temperature, time into variables
     ; TODO: check for abort conditions
+    
+    jnb emergency_shutoff, abortSkip
+    mov FSM_state, #0
+    
+abortSkip:
     mov a, FSM_state
 
 FSM_0: ; Idle
