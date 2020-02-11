@@ -5,6 +5,7 @@ $LIST
 ; TODO: initialization
 ; Justin adding tinerrupt shit
 
+cseg
 org 0x0000
     ljmp main
  
@@ -68,6 +69,16 @@ $include(lcd_4bit.inc)
 $LIST
 
 cseg
+
+message0: db 'Current stage: Idle',0
+message1: db 'Current stage: Ramp to soak',0
+message2: db 'Current stage: Preheat/soak',0
+message3: db 'Current stage: Ramp to peak',0
+message4: db 'Current stage: Heating at peak',0
+message5: db 'Current stage: Cooling Down',0
+temp_message: db 'temperature is: ',0
+Time_message: db 'Duration:',0
+
 ; interrupt stuff here
 emergency_ISR_Init:
 	setb EX0
@@ -262,6 +273,7 @@ main:
     ;;Send_Constant_String(#temp_message)
 	; initialize
     mov SP, #7FH
+    lcall LCD_4BIT
  	lcall Timer0_Init ;enable timer0 interrupt
  	lcall emergency_ISR_Init ;enable pin12 emergency stop
  	setb EA   ; Enable Global interrupts

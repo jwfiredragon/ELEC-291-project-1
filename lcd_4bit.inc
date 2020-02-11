@@ -2,14 +2,6 @@ dseg at 0x30
 Display_number: ds 1 ;set Display_number as 1 byte variable
 
 cseg
-message0: db 'Current stage: Idle',0
-message1: db 'Current stage: Ramp to soak',0
-message2: db 'Current stage: Preheat/soak',0
-message3: db 'Current stage: Ramp to peak',0
-message4: db 'Current stage: Heating at peak',0
-message5: db 'Current stage: Cooling Down',0
-temp_message: db 'temperature is: ',0
-Time_message: db 'Duration:',0
 
 ChangeDisplay mac
     push AR2
