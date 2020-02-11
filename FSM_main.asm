@@ -5,20 +5,20 @@ $LIST
 ; TODO: initialization
 ; Justin adding tinerrupt shit
 
-org 0000H
- ljmp main
+org 0x0000
+    ljmp main
  
 ; External interrupt 0 vector for pin p1.3
 ; this
 org 0x0003
- ljmp emergency_ISR
+    ljmp emergency_ISR
  
 ; Timer/Counter 0 overflow interrupt vector
 org 0x000B
- ljmp Timer0_ISR
+    ljmp Timer0_ISR
 
 org 001BH
- ljmp 1803H ; Needed if using the debugger
+    ljmp 1803H ; Needed if using the debugger
 ; For a 7.373MHz internal oscillator, one machine
 ; cycle takes 2/7.373MHz =0.27126us
 
@@ -27,14 +27,19 @@ emergency_shutoff: dbit 1
 
 dseg at 0x30
 ; These 'equ' must match the wiring between the microcontroller and the LCD!
-LCD_RS equ P0.7
-LCD_RW equ P3.0
-LCD_E  equ P3.1
-LCD_D4 equ P2.0
-LCD_D5 equ P2.1
-LCD_D6 equ P2.2
-LCD_D7 equ P2.3
-CLK           EQU 7373000  ; Microcontroller system crystal frequency in Hz
+LCD_RS equ P0.5
+LCD_RW equ P0.6
+LCD_E  equ P0.7
+LCD_D4 equ P1.2
+LCD_D5 equ P1.3
+LCD_D6 equ P1.4
+LCD_D7 equ P1.6
+
+CLK         EQU 14746000  ; Microcontroller system clock frequency in Hz
+CCU_RATE    EQU 22050     ; 22050Hz is the sampling rate of the wav file we are playing
+CCU_RELOAD  EQU ((65536-((CLK/(2*CCU_RATE)))))
+BAUD        EQU 115200
+BRVAL       EQU ((CLK/BAUD)-16)
 TIMER0_RATE   EQU 100000     ; 2048Hz squarewave (peak amplitude of CEM-1203 speaker)
 TIMER0_RELOAD EQU ((65536-(CLK/(2*TIMER0_RATE))))
 TEMP_THRESHOLD EQU 500
@@ -46,8 +51,8 @@ BTN_INCR    equ 1
 BTN_DECR    equ 1
 
 FSM_state:  ds 1
-Var_temp:   ds 1
-Var_sec:    ds 1
+Var_temp:   ds 2
+Var_sec:    ds 2
 Var_power:  ds 1
 Val_to_set: ds 1
 
@@ -253,6 +258,8 @@ SRP3:
     ret
 
 main:
+    ;;Set_Cursor(1,1)
+    ;;Send_Constant_String(#temp_message)
 	; initialize
     mov SP, #7FH
  	lcall Timer0_Init ;enable timer0 interrupt
