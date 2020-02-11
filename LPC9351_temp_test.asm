@@ -150,13 +150,6 @@ MainProgram:
 	; Write something to the EEPROM
 
 Temp:
-	push acc
-	mov x,Result
-	mov x+1,Result+1
-	load_y(41)
-	lcall div32
-	lcall hex2bcd
-
 	;mov DPTR,TEMP_READ
 	;lcall SendString
 	mov	b, AD1DAT0
