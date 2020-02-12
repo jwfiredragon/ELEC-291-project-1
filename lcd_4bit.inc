@@ -1,5 +1,7 @@
 dseg
 Display_number: ds 1 ;set Display_number as 1 byte variable
+bseg
+Change_flag:ds 1;1= updated,0=not udapted
 cseg
 message_intro:db 'Temp/Mode:',0
 message0: db 'Idle',0
