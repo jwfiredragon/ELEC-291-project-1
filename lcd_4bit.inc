@@ -1,11 +1,19 @@
-dseg at 0x30
+dseg
 Display_number: ds 1 ;set Display_number as 1 byte variable
-
 cseg
+message_intro:db 'Temp/Mode:',0
+message0: db 'Idle',0
+message1: db 'Ramp to soak',0
+message2: db 'Preheat/soak',0
+message3: db 'Ramp to peak',0
+message4: db 'Heating at peak',0
+message5: db 'Cooling Down',0
+temp_message: db 'Temperature Edit:',0
+Time_message: db 'Duration:',0
 
-ChangeDisplay mac
-    push AR2
-    WriteCommand(#0x01)
+ChangeDisplay mac:
+   ; mov a, #0x01 ;  Clear screen command (takes some time)
+    WriteCommand (#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
     mov R2, #2
     Wait_Milli_Seconds(#5) ;wait 5ms
@@ -15,17 +23,24 @@ ChangeDisplay mac
     mov Display_number,a ;mov to display_number
     Set_Cursor(1,1)
     Send_Constant_String(#temp_message)
+    Set_Cursor(2,1)
     Display_BCD(Display_number) ;display to lcd
-    pop AR2
 endmac
 
 Regular_display:
+    WriteCommand(#0x01)
+    ;Wait for clear screen command to finish. Usually takes 1.52ms.
+    mov R2, #2
+    Wait_Milli_Seconds(#5) ;wait 5ms
     mov a,Var_temp
     da a
     mov Var_temp,a
     ;display what state it is in
     Set_Cursor(1,1)
-    mov a, FSM_state
+    Send_Constant_string(#message_intro)
+    Display_BCD(temp)
+    ;mov a, FSM_state
+    Set_Cursor(2,1)
     cjne a,#5,next_line4
     Send_Constant_String(#message5)
     ljmp skip_display
@@ -48,11 +63,9 @@ next_line1:
 next_line0:
     Send_Constant_String(#message0)
 skip_display:;display the temp
-    Set_Cursor(2,1)
-    Send_Constant_String(#temp_message)
-    Display_BCD(Var_temp)
     ret
 end
+
 
 
 
