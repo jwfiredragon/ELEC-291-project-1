@@ -12,6 +12,14 @@ temp_message: db 'Temperature Edit:',0
 Time_message: db 'Duration:',0
 
 ChangeDisplay mac:
+	 mov a,Change_flag
+    cjne a,#0x00,skip_change_Display
+    WriteCommand(#0x01)
+    ;Wait for clear screen command to finish. Usually takes 1.52ms.
+    mov R2, #2
+    Wait_Milli_Seconds(#5) ;wait 5ms
+    mov Change_flag,#0x01
+skip_change_Display:
    ; mov a, #0x01 ;  Clear screen command (takes some time)
     WriteCommand (#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
@@ -27,11 +35,15 @@ ChangeDisplay mac:
     Display_BCD(Display_number) ;display to lcd
 endmac
 
-Regular_display:
+Regular_display:;if updated clear screen
+	 mov a,Change_flag
+    cjne a,#0x00,skip_change
     WriteCommand(#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
     mov R2, #2
     Wait_Milli_Seconds(#5) ;wait 5ms
+    mov Change_flag,#0x01
+skip_change:
     mov a,Var_temp
     da a
     mov Var_temp,a
