@@ -1003,6 +1003,11 @@ Skip_voice2:
     ; in ~1s inervals
     ; subb the number of a from something im tired
     
+    ; upon entering this timed state, reset a variable (and flag)
+    ; that holds time that the timer1 interrupt is constantly
+    ; incrementing. (in interrupt) once the elapsed time has passed,
+    ; set the flag and go into the next state.
+    
     cjne a, Time_soak, FSM_2b
     sjmp FSM_2a
 FSM_2b:
