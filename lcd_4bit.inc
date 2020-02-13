@@ -3,32 +3,10 @@
 ; bseg
 ; Change_flag:ds 1;1= updated,0=not udapted
 ; cseg
-; message_intro:db 'Temp/Mode:',0
-; message0: db 'Idle',0
-; message1: db 'Ramp to soak',0
-; message2: db 'Preheat/soak',0
-; message3: db 'Ramp to peak',0
-; message4: db 'Heating at peak',0
-; message5: db 'Cooling Down',0
-; temp_message: db 'Temperature Edit:',0
-; Time_message: db 'Duration:',0
 cseg
 
 ChangeDisplay mac
 ; ChangeDisplay(%0)
-	mov a, Change_flag
-    cjne a, #0x00, skip_change_Display
-    WriteCommand(#0x01)
-    ;Wait for clear screen command to finish. Usually takes 1.52ms.
-    mov R2, #2
-    Wait_Milli_Seconds(#5) ;wait 5ms
-    mov Change_flag,#0x01
-skip_change_Display:
-   ; mov a, #0x01 ;  Clear screen command (takes some time)
-    WriteCommand (#0x01)
-    ;Wait for clear screen command to finish. Usually takes 1.52ms.
-    mov R2, #2
-    Wait_Milli_Seconds(#5) ;wait 5ms
 
     mov a, %0  ;mov mac to a
     da a        ;change to hex
@@ -44,18 +22,17 @@ Regular_display:    ;if updated clear screen
     cjne a,#0x00,skip_change
     WriteCommand(#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
-    mov R2, #2
     Wait_Milli_Seconds(#5) ;wait 5ms
     mov Change_flag,#0x01
 skip_change:
-    mov a,Var_temp
-    da a
-    mov Var_temp,a
+    ;mov a,Var_temp
+    ;da a
+    ;mov Var_temp,a
     ;display what state it is in
     Set_Cursor(1,1)
     Send_Constant_string(#message_intro)
-    Display_BCD(temp)
-    ;mov a, FSM_state
+    ;Display_BCD(temp)
+    mov a, FSM_state
     Set_Cursor(2,1)
     cjne a,#5,next_line4
     Send_Constant_String(#message5)
@@ -80,7 +57,40 @@ next_line0:
     Send_Constant_String(#message0)
 skip_display:;display the temp
     ret
+
+Send_BCD mac
+    push ar0
+    mov r0, %0
+    lcall ?Send_BCD
+    pop ar0
+    endmac
+?Send_BCD:
+push acc; Write most significant digit
+    mov a, r0
+    swap a
+    anl a, #0fh
+    orl a, #30h
+    lcall putchar; write least significant digit
+    mov a, r0
+    anl a, #0fh
+    orl a, #30h
+    lcall putchar
+    pop acc
+    ret
+; Send a constant-zero-terminated string using the serial port
+SendString:
+    clr A
+    movc A, @A+DPTR
+    jz SendStringDone
+    lcall putchar
+    inc DPTR
+    sjmp SendString
+SendStringDone:
+    ret
 end
+
+
+
 
 
 
