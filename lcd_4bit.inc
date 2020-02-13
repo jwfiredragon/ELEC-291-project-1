@@ -1,21 +1,23 @@
-dseg
-Display_number: ds 1 ;set Display_number as 1 byte variable
-bseg
-Change_flag:ds 1;1= updated,0=not udapted
+; dseg
+; Display_number: ds 1 ;set Display_number as 1 byte variable
+; bseg
+; Change_flag:ds 1;1= updated,0=not udapted
+; cseg
+; message_intro:db 'Temp/Mode:',0
+; message0: db 'Idle',0
+; message1: db 'Ramp to soak',0
+; message2: db 'Preheat/soak',0
+; message3: db 'Ramp to peak',0
+; message4: db 'Heating at peak',0
+; message5: db 'Cooling Down',0
+; temp_message: db 'Temperature Edit:',0
+; Time_message: db 'Duration:',0
 cseg
-message_intro:db 'Temp/Mode:',0
-message0: db 'Idle',0
-message1: db 'Ramp to soak',0
-message2: db 'Preheat/soak',0
-message3: db 'Ramp to peak',0
-message4: db 'Heating at peak',0
-message5: db 'Cooling Down',0
-temp_message: db 'Temperature Edit:',0
-Time_message: db 'Duration:',0
 
-ChangeDisplay mac:
-	 mov a,Change_flag
-    cjne a,#0x00,skip_change_Display
+ChangeDisplay mac
+; ChangeDisplay(%0)
+	mov a, Change_flag
+    cjne a, #0x00, skip_change_Display
     WriteCommand(#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
     mov R2, #2
@@ -28,7 +30,7 @@ skip_change_Display:
     mov R2, #2
     Wait_Milli_Seconds(#5) ;wait 5ms
 
-    mov a,%0 ;mov mac to a
+    mov a, %0  ;mov mac to a
     da a        ;change to hex
     mov Display_number,a ;mov to display_number
     Set_Cursor(1,1)
@@ -37,8 +39,8 @@ skip_change_Display:
     Display_BCD(Display_number) ;display to lcd
 endmac
 
-Regular_display:;if updated clear screen
-	 mov a,Change_flag
+Regular_display:    ;if updated clear screen
+	 mov a, Change_flag
     cjne a,#0x00,skip_change
     WriteCommand(#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
