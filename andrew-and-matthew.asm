@@ -179,6 +179,11 @@ bseg
 mf: dbit 1
 emergency_shutoff: dbit 1
 Change_flag: dbit 1
+voice_flag1: dbit 1
+voice_flag2: dbit 1
+voice_flag3: dbit 1
+voice_flag4: dbit 1
+voice_flag5: dbit 1
 
 cseg
 
@@ -835,6 +840,12 @@ MainProgram:
 
     mov Val_to_set, #0
     mov FSM_state, #0
+
+	setb voice_flag1
+	setb voice_flag2
+	setb voice_flag3
+	setb voice_flag4
+	setb voice_flag5
 	
 forever_loop:
 	;jnb emergency_shutoff, abortSkip
@@ -845,6 +856,7 @@ abortSkip:
     lcall Regular_display
 
 FSM_0: ; Idle
+	setb voice_flag5
     cjne a, #0, FSM_1
     mov Var_power, #0
     lcall Set_Reflow_Params
@@ -859,12 +871,15 @@ FSM_0a:
     ljmp FSM_done
 
 FSM_1: ; Ramp to soak
+	jnb voice_flag1, Skip_voice1
+	clr voice_flag1
 	; Announce the state
 	mov a, #RtoS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
-	; 
+	;
+Skip_voice1: 
     cjne a, #1, FSM_2
     mov Var_power, #100
     mov a, Var_temp
@@ -879,12 +894,16 @@ FSM_1a:
     ljmp FSM_done
 
 FSM_2: ; Preheat/soak
+	jnb voice_flag2, Skip_voice2
+	clr voice_flag2
+	setb voice_flag1
 	; Announce the state
 	mov a, #PheatS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
+Skip_voice2:
     cjne a, #2, FSM_3
     mov Var_power, #20
     mov a, Var_sec
@@ -899,12 +918,16 @@ FSM_2a:
     ljmp FSM_done
 
 FSM_3: ; Ramp to peak
+	jnb voice_flag3, Skip_voice3
+	clr voice_flag3
+	setb voice_flag2
 	; Announce the state
 	mov a, #RtoP
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
+Skip_voice3:
     cjne a, #3, FSM_4
     mov Var_power, #100
     mov a, Var_temp
@@ -919,12 +942,16 @@ FSM_3a:
     ljmp FSM_done
 
 FSM_4: ; Heating at peak
+	jnb voice_flag4, Skip_voice4
+	clr voice_flag4
+	setb voice_flag3
 	; Announce the state
 	mov a, #Reflow
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
+Skip_voice4:
     cjne a, #4, FSM_5
     mov Var_power, #20
     mov a, Var_sec
@@ -939,12 +966,16 @@ FSM_4a:
     ljmp FSM_done
 
 FSM_5: ; Cooling down
+	jnb voice_flag5, Skip_voice5
+	clr voice_flag5
+	setb voice_flag4
 	; Announce the state
 	mov a, #Cooling
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
+Skip_voice5:
     cjne a, #5, FSM_done
     mov Var_power, #0
     mov a, Var_temp
