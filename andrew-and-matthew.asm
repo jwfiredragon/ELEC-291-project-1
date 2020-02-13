@@ -78,17 +78,16 @@ READ_DEVICE_ID   EQU 0x9f  ; Address:0 Dummy:2 Num:1 to infinite
 
 ; NAME
 TEMP_READ   EQU P2.7
-BTN_START   EQU 1 ; TODO: assign port
-BTN_SETVAL  EQU 1
-BTN_INCR    EQU 1
-BTN_DECR    EQU 1
+BTN_START   EQU P0.2 ; TODO: assign port
+BTN_SETVAL  EQU P0.1
+BTN_INCR    EQU P0.3
 
 ; These 'equ' must match the wiring between the microcontroller and the LCD!
 LCD_RS EQU P0.5
 LCD_RW EQU P0.6
 LCD_E  EQU P0.7
 LCD_D4 EQU P1.2
-LCD_D5 EQU P1.3
+LCD_D5 EQU P3.1
 LCD_D6 EQU P1.4
 LCD_D7 EQU P1.6
 
@@ -124,6 +123,7 @@ Var_sec:    ds 2
 Var_power:  ds 1
 Val_to_set: ds 1
 temp: 		ds 1
+Display_number: ds 2
 
 SoundINDEX: 		ds 1 ; Index of the sound
 
@@ -140,15 +140,19 @@ Change_flag: dbit 1
 
 cseg
 
-message0: db 'Current stage: Idle',0
-message1: db 'Current stage: Ramp to soak',0
-message2: db 'Current stage: Preheat/soak',0
-message3: db 'Current stage: Ramp to peak',0
-message4: db 'Current stage: Heating at peak',0
-message5: db 'Current stage: Cooling Down',0
-temp_message: db 'temperature is: ',0
-Time_message: db 'Duration:', 0
-message_intro: db 'frick!', 0
+message0: db 'Idle',0
+message1: db 'Ramp to soak',0
+message2: db 'Preheat/soak',0
+message3: db 'Ramp to peak',0
+message4: db 'Heating at peak',0
+message5: db 'Cooling Down',0
+tempsoak_message: db 'Soak temp: ',0
+timesoak_message: db 'Soak time: ',0
+temppeak_message: db 'Peak temp: ',0
+timepeak_message: db 'Peak time: ',0
+tempcool_message: db 'Cool temp: ',0
+time_message: db 'Time:', 0
+temp_message: db 'Temp:', 0
 
 Line1: db 'CH3 CH2 CH1 CH0', 0
 Line2: db 'xxx xxx xxx xxx', 0
@@ -588,7 +592,7 @@ Display_ADC_Values:
 	lcall div32
 
 	lcall Hex2BCD
-	Set_Cursor(2, 1)
+	Set_Cursor(1, 1)
 	lcall LCD_3BCD
 
 	; Some delay so the LCD looks ok
@@ -601,121 +605,63 @@ Incr_value:
     mov a, Val_to_set
     cjne a, #0, IV1
     mov a, Temp_soak
-    ;;ChangeDIsplay(Temp_soak)
     cjne a, #255, IV0a
+	mov Temp_soak, #0
     ret
 IV0a:
-    add a, #0x01
+    add a, #1
     da a
     mov Temp_soak, a
     ret
 IV1:
     cjne a, #1, IV2
     mov a, Time_soak
-    ;;ChangeDIsplay(Time_soak)
     cjne a, #255, IV1a
+	mov Temp_soak, #0
     ret
 IV1a:
-    add a, #0x01
+    add a, #1
     da a
     mov Time_soak, a
     ret
 IV2:
     cjne a, #2, IV3
     mov a, Temp_peak
-    ;;ChangeDIsplay(Temp_peak)
     cjne a, #255, IV2a
+	mov Temp_soak, #0
     ret
 IV2a:
-    add a, #0x01
+    add a, #1
     da a
     mov Temp_peak, a
     ret
 IV3:
     cjne a, #3, IV4
     mov a, Time_peak
-    ;;ChangeDIsplay(Time_peak)
     cjne a, #255, IV3a
+	mov Temp_soak, #0
     ret
 IV3a:
-    add a, #0x01
+    add a, #1
     da a
     mov Time_peak, a
     ret
 IV4:
     cjne a, #4, IV5
     mov a, Temp_cool
-    ;;ChangeDIsplay(Temp_cool)
     cjne a, #255, IV4a
+	mov Temp_soak, #0
     ret
 IV4a:
-    add a, #0x01
+    add a, #1
     da a
     mov Temp_cool, a
     ret
 IV5:
     ret
 
-Decr_value:
-    mov a, Val_to_set
-    cjne a, #0, DV1
-    mov a, Temp_soak
-    ;;ChangeDIsplay(Temp_soak)
-    cjne a, #0, DV0a
-    ret
-DV0a:
-    subb a, #0x01
-    da a
-    mov Temp_soak, a
-    ret
-DV1:
-    cjne a, #1, DV2
-    mov a, Time_soak
-    ;;ChangeDIsplay(Time_soak)
-    cjne a, #0, DV1a
-    ret
-DV1a:
-    subb a, #0x01
-    da a
-    mov Time_soak, a
-    ret
-DV2:
-    cjne a, #2, DV3
-    mov a, Temp_peak
-    ;;ChangeDIsplay(Temp_peak)
-    cjne a, #0, DV2a
-    ret
-DV2a:
-    subb a, #0x01
-    da a
-    mov Temp_peak, a
-    ret
-DV3:
-    cjne a, #3, DV4
-    mov a, Time_peak
-    ;;ChangeDIsplay(Time_peak)
-    cjne a, #0, DV3a
-    ret
-DV3a:
-    subb a, #0x01
-    da a
-    mov Time_peak, a
-    ret
-DV4:
-    cjne a, #4, DV5
-    mov a, Temp_cool
-    ;;ChangeDIsplay(Temp_cool)
-    cjne a, #0, DV4a
-    ret
-DV4a:
-    subb a, #0x01
-    da a
-    mov Temp_cool, a
-    ret
-DV5:
-    ret
-
 Set_Reflow_Params:
+    lcall DisplayEdit
     ; If SETVAL button is pressed, change variable to be incremented
 	jb BTN_SETVAL, SRP1
 	Wait_Milli_Seconds(#50)
@@ -732,19 +678,12 @@ SV1:
     mov Val_to_set, a
 SRP1:
     ; if INCR is pressed, add one to current variable (maximum of 255)
-    jb BTN_SETVAL, SRP2
+    jb BTN_INCR, SRP2
 	Wait_Milli_Seconds(#100)
-	jb BTN_SETVAL, SRP2
-	jnb BTN_SETVAL, $
+	;;jb BTN_INCR, SRP2
+	;;jnb BTN_INCR, $
     lcall Incr_value
 SRP2:
-    ; if DECR is pressed, subtract one from current variable (minimum of 0)
-    jb BTN_SETVAL, SRP3
-	Wait_Milli_Seconds(#100)
-	jb BTN_SETVAL, SRP3
-	jnb BTN_SETVAL, $
-    lcall Decr_Value
-SRP3:
     ret
 
 ;---------------------------------;
@@ -774,10 +713,10 @@ MainProgram:
 	; Initialize variables
 	mov SoundINDEX, #0
 
-	Set_Cursor(1, 1)
-    Send_Constant_String(#Line1)
-	Set_Cursor(2, 1)
-    Send_Constant_String(#Line2)
+	;;Set_Cursor(1, 1)
+    ;;Send_Constant_String(#Line1)
+	;;Set_Cursor(2, 1)
+    ;;Send_Constant_String(#Line2)
 
 	; Initialize default values for reflow parameter
     mov Temp_soak, #150
@@ -790,8 +729,8 @@ MainProgram:
     mov FSM_state, #0
 	
 forever_loop:
-	jnb emergency_shutoff, abortSkip
-    mov FSM_state, #0
+	;jnb emergency_shutoff, abortSkip
+    ;mov FSM_state, #0
     
 abortSkip:
     mov a, FSM_state
@@ -819,10 +758,10 @@ FSM_1: ; Ramp to soak
     sjmp FSM_1a
 FSM_1b:
     jc FSM_1a
-    mov FSM_state, #2
+    mov FSM_state, #1
     ljmp FSM_done
 FSM_1a:
-    mov FSM_state, #1
+    mov FSM_state, #2
     ljmp FSM_done
 
 FSM_2: ; Preheat/soak
@@ -833,10 +772,10 @@ FSM_2: ; Preheat/soak
     sjmp FSM_2a
 FSM_2b:
     jc FSM_2a
-    mov FSM_state, #3
+    mov FSM_state, #2
     ljmp FSM_done
 FSM_2a:
-    mov FSM_state, #2
+    mov FSM_state, #3
     ljmp FSM_done
 
 FSM_3: ; Ramp to peak
@@ -847,10 +786,10 @@ FSM_3: ; Ramp to peak
     sjmp FSM_3a
 FSM_3b:
     jc FSM_3a
-    mov FSM_state, #4
+    mov FSM_state, #3
     ljmp FSM_done
 FSM_3a:
-    mov FSM_state, #3
+    mov FSM_state, #4
     ljmp FSM_done
 
 FSM_4: ; Heating at peak
@@ -861,10 +800,10 @@ FSM_4: ; Heating at peak
     sjmp FSM_4a
 FSM_4b:
     jc FSM_4a
-    mov FSM_state, #5
+    mov FSM_state, #4
     ljmp FSM_done
 FSM_4a:
-    mov FSM_state, #4
+    mov FSM_state, #5
     ljmp FSM_done
 
 FSM_5: ; Cooling down
@@ -876,19 +815,19 @@ FSM_5: ; Cooling down
 FSM_5b:
     jc FSM_5a
 FSM_5c:
-    mov FSM_state, #5
+    mov FSM_state, #0
     ljmp FSM_done
 FSM_5a:
-    mov FSM_state, #0
+    mov FSM_state, #5
     ljmp FSM_done
 
 FSM_done:
 
-	lcall Display_ADC_Values
+	;lcall Display_ADC_Values
 
-	cpl P2.6
+	;cpl P2.6
 
-	Wait_Milli_Seconds(#250)
+	Wait_Milli_Seconds(#200)
 
 	ljmp forever_loop
 	
