@@ -78,7 +78,7 @@ READ_DEVICE_ID   EQU 0x9f  ; Address:0 Dummy:2 Num:1 to infinite
 
 ; NAME
 TEMP_READ   EQU P2.7
-BTN_START   EQU 1 ; TODO: assign port
+BTN_START   EQU P2.0   ; TODO: assign port
 BTN_SETVAL  EQU 1
 BTN_INCR    EQU 1
 BTN_DECR    EQU 1
@@ -114,6 +114,7 @@ org 0x005b ; CCU interrupt vector.  Used in this code to replay the wave file.
 	ljmp CCU_ISR
 
 dseg at 0x30
+Display_number: ds 1
 x:   ds 4
 y:   ds 4
 bcd: ds 5
@@ -140,15 +141,15 @@ Change_flag: dbit 1
 
 cseg
 
-message0: db 'Current stage: Idle',0
-message1: db 'Current stage: Ramp to soak',0
-message2: db 'Current stage: Preheat/soak',0
-message3: db 'Current stage: Ramp to peak',0
-message4: db 'Current stage: Heating at peak',0
-message5: db 'Current stage: Cooling Down',0
-temp_message: db 'temperature is: ',0
-Time_message: db 'Duration:', 0
-message_intro: db 'frick!', 0
+ message_intro:db 'Temp/Mode:',0
+ message0: db 'Idle',0
+ message1: db 'Ramp to soak',0
+ message2: db 'Preheat/soak',0
+ message3: db 'Ramp to peak',0
+ message4: db 'Heating at peak',0
+ message5: db 'Cooling Down',0
+ temp_message: db 'Temperature Edit:',0
+ Time_message: db 'Duration:',0
 
 Line1: db 'CH3 CH2 CH1 CH0', 0
 Line2: db 'xxx xxx xxx xxx', 0
@@ -156,7 +157,7 @@ Line2: db 'xxx xxx xxx xxx', 0
 $NOLIST
 $include(LCD_4bit_LPC9351.inc) ; A library of LCD related functions and utility macros
 $include(lcd_4bit.inc)
-$include(speaker.inc)
+;$include(speaker.inc)
 $include(math32.inc)
 $LIST
 
@@ -601,7 +602,7 @@ Incr_value:
     mov a, Val_to_set
     cjne a, #0, IV1
     mov a, Temp_soak
-    ;;ChangeDIsplay(Temp_soak)
+    ChangeDIsplay(Temp_soak)
     cjne a, #255, IV0a
     ret
 IV0a:
@@ -612,7 +613,7 @@ IV0a:
 IV1:
     cjne a, #1, IV2
     mov a, Time_soak
-    ;;ChangeDIsplay(Time_soak)
+    ChangeDIsplay(Time_soak)
     cjne a, #255, IV1a
     ret
 IV1a:
@@ -623,7 +624,7 @@ IV1a:
 IV2:
     cjne a, #2, IV3
     mov a, Temp_peak
-    ;;ChangeDIsplay(Temp_peak)
+    ChangeDIsplay(Temp_peak)
     cjne a, #255, IV2a
     ret
 IV2a:
@@ -634,7 +635,7 @@ IV2a:
 IV3:
     cjne a, #3, IV4
     mov a, Time_peak
-    ;;ChangeDIsplay(Time_peak)
+    ChangeDIsplay(Time_peak)
     cjne a, #255, IV3a
     ret
 IV3a:
@@ -645,7 +646,7 @@ IV3a:
 IV4:
     cjne a, #4, IV5
     mov a, Temp_cool
-    ;;ChangeDIsplay(Temp_cool)
+    ChangeDIsplay(Temp_cool)
     cjne a, #255, IV4a
     ret
 IV4a:
@@ -764,7 +765,7 @@ MainProgram:
 	lcall CCU_Init
 	lcall Init_SPI
 
- 	lcall emergency_ISR_Init ;enable pin12 emergency stop
+ 	;lcall emergency_ISR_Init ;enable pin12 emergency stop
 	
 	clr TMOD20 	; Stop CCU timer
 	setb EA ; Enable global interrupts.
@@ -774,10 +775,6 @@ MainProgram:
 	; Initialize variables
 	mov SoundINDEX, #0
 
-	Set_Cursor(1, 1)
-    Send_Constant_String(#Line1)
-	Set_Cursor(2, 1)
-    Send_Constant_String(#Line2)
 
 	; Initialize default values for reflow parameter
     mov Temp_soak, #150
@@ -790,8 +787,8 @@ MainProgram:
     mov FSM_state, #0
 	
 forever_loop:
-	jnb emergency_shutoff, abortSkip
-    mov FSM_state, #0
+	;jnb emergency_shutoff, abortSkip
+    ;mov FSM_state, #0
     
 abortSkip:
     mov a, FSM_state
@@ -800,11 +797,11 @@ abortSkip:
 FSM_0: ; Idle
     cjne a, #0, FSM_1
     mov Var_power, #0
-    lcall Set_Reflow_Params
-	jb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
-	Wait_Milli_Seconds(#50)	; Debounce delay.  This macro is also in 'LCD_4bit.inc'
-	jb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
-	jnb BTN_START, $		; Wait for button release.  The '$' means: jump to same instruction.
+    ;lcall Set_Reflow_Params
+	;jnb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
+	;Wait_Milli_Seconds(#50)	; Debounce delay.  This macro is also in 'LCD_4bit.inc'
+	;jnb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
+	;jnb BTN_START, FSM_0a		; Wait for button release.  The '$' means: jump to same instruction.
     mov FSM_state, #1 ; Go to state 1 if button is pressed
     ljmp FSM_done
 FSM_0a:
@@ -872,7 +869,7 @@ FSM_5: ; Cooling down
     mov Var_power, #0
     mov a, Var_temp
     cjne a, Temp_cool, FSM_5b
-    sjmp FSM_5c
+    sjmp FSM_5a
 FSM_5b:
     jc FSM_5a
 FSM_5c:
@@ -883,8 +880,6 @@ FSM_5a:
     ljmp FSM_done
 
 FSM_done:
-
-	lcall Display_ADC_Values
 
 	cpl P2.6
 
