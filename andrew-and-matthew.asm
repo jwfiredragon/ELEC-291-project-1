@@ -59,6 +59,8 @@ BRVAL       EQU ((CLK/BAUD)-16)
 TIMER0_RATE   	EQU 100000     ; 2048Hz squarewave (peak amplitude of CEM-1203 speaker)
 TIMER0_RELOAD 	EQU ((65536-(CLK/(2*TIMER0_RATE))))
 TEMP_THRESHOLD 	EQU 500
+TIMER1_RATE   EQU 100   ; 1000Hz, for a timer tick of 1ms
+TIMER1_RELOAD EQU ((65536-(CLK/TIMER1_RATE)))
 
 FLASH_CE    EQU P2.4
 SOUND       EQU P2.7
@@ -148,7 +150,7 @@ org 0x0013 ; External interrupt 1 vector (not used in this code)
 	reti
 
 org 0x001B ; Timer/Counter 1 overflow interrupt vector (not used in this code
-	reti 
+	ljmp Timer1_ISR
 
 org 0x0023 ; Serial port receive/transmit interrupt vector (not used in this code)
 	reti
@@ -169,6 +171,10 @@ Val_to_set: ds 1
 temp: 		ds 1
 Display_number: ds 2
 
+Count10ms:    ds 1 ; Used to determine when half second has passed
+BCD_counter:  ds 1 ; The BCD counter incrememted in the ISR and displayed in the main loop
+Count1ms: ds 2 ;
+
 SoundINDEX: 		ds 1 ; Index of the sound
 
 Temp_soak:  ds 2 ; 0
@@ -186,6 +192,8 @@ voice_flag2: dbit 1
 voice_flag3: dbit 1
 voice_flag4: dbit 1
 voice_flag5: dbit 1
+half_seconds_flag: dbit 1 ; Set to one in the ISR every time 500 ms had passed
+
 
 cseg
 
@@ -250,6 +258,71 @@ Timer0_ISR:
 	mov TL0, #low(TIMER0_RELOAD)
 	;cpl heatPin ; Connect speaker to this pin
 	reti
+	
+;---------------------------------;
+; Routine to initialize the ISR   ;
+; for timer 1                     ;
+;---------------------------------;
+Timer1_Init:
+	mov a, TMOD
+	anl a, #0x0f ; Clear the bits for timer 1
+	orl a, #0x10 ; Configure timer 1 as 16-timer
+	mov TMOD, a
+	mov TH1, #high(TIMER1_RELOAD)
+	mov TL1, #low(TIMER1_RELOAD)
+	
+	clr a
+	mov Count1ms+0, a
+	mov Count1ms+1, a
+	
+	; Enable the timer and interrupts
+    setb ET1  ; Enable timer 1 interrupt
+    setb TR1  ; Start timer 1
+	ret
+
+Timer1_ISR:
+	mov TH1, #high(TIMER1_RELOAD)
+	mov TL1, #low(TIMER1_RELOAD)
+	cpl P2.6 ; To check the interrupt rate with oscilloscope. It must be precisely a 10 ms pulse.
+	
+	; The two registers used in the ISR must be saved in the stack
+	push acc
+	push psw
+	
+	; Increment the 8-bit 10-mili-second counter
+	inc Count1ms+0    ; Increment the low 8-bits first
+	mov a, Count1ms+0 ; If the low 8-bits overflow, then increment high 8-bits
+	jnz Inc_Done
+	inc Count1ms+1
+
+Inc_Done:
+	; Check if half second has passed
+	mov a, Count1ms+0
+	cjne a, #low(500), Timer1_ISR_done ; Warning: this instruction changes the carry flag!
+	mov a, Count1ms+1
+	cjne a, #high(500), Timer1_ISR_done
+	
+	; 500 milliseconds have passed.  Set a flag so the main program knows
+	setb half_seconds_flag ; Let the main program know half second had passed
+	cpl TR0 ; Enable/disable timer/counter 0. This line creates a beep-silence-beep-silence sound.
+	; Reset to zero the 10-milli-seconds counter, it is a 8-bit variable
+	clr a
+	mov Count1ms+0, a
+	mov Count1ms+1, a
+	; Increment the BCD counter
+	mov a, BCD_counter
+	add a, #0x01
+	sjmp Timer1_ISR_da
+
+Timer1_ISR_da:
+	da a ; Decimal adjust instruction.  Check datasheet for more details!
+	mov BCD_counter, a
+	
+Timer1_ISR_done:
+	pop psw
+	pop acc
+	reti
+
 
 ;---------------------------------;
 ; Routine to initialize the CCU.  ;
@@ -823,6 +896,7 @@ MainProgram:
 	lcall InitDAC1 ; Call after 'Ports_Init'
 	lcall CCU_Init
 	lcall Init_SPI
+	lcall Timer1_init
 
  	lcall emergency_ISR_Init ;enable pin12 emergency stop
 	
@@ -858,15 +932,16 @@ MainProgram:
 forever_loop:
 	;jnb emergency_shutoff, abortSkip
     ;mov FSM_state, #0
+    ; subb the number of
     
 abortSkip:
     mov a, FSM_state
     lcall Regular_display
 
 FSM_0: ; Idle
-	setb OVEN_PIN
-	setb voice_flag5
     cjne a, #0, FSM_1
+    setb OVEN_PIN
+	setb voice_flag5
     mov Var_power, #0
     lcall Set_Reflow_Params
 	jb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
@@ -895,6 +970,8 @@ Skip_voice1:
     cjne a, #1, FSM_2
 	mov Var_power, #100
     mov a, Var_temp
+	Set_Cursor(2, 14)     ; the place in the LCD where we want the BCD counter value
+	Display_BCD(BCD_counter) ; This macro is also in 'LCD_4bit_LPC9351.inc'
     cjne a, Temp_soak, FSM_1b
     sjmp FSM_1a
 FSM_1b:
@@ -918,10 +995,14 @@ FSM_2: ; Preheat/soak
 	pop acc
 	;
 Skip_voice2:
-clr OVEN_PIN
     cjne a, #2, FSM_3
-    mov Var_power, #20
-    mov a, Var_sec
+    clr OVEN_PIN
+    
+    ; INSERT TIME COMPARISON HERE
+    ; TIMER 1 HAS BEEN IMPLEMENTED AND TAKES DATA
+    ; in ~1s inervals
+    ; subb the number of a from something im tired
+    
     cjne a, Time_soak, FSM_2b
     sjmp FSM_2a
 FSM_2b:
@@ -933,7 +1014,6 @@ FSM_2a:
     ljmp FSM_done
 
 FSM_3: ; Ramp to peak
-	lcall Display_ADC_Values
 	jnb voice_flag3, Skip_voice3
 	clr voice_flag3
 	setb voice_flag2
