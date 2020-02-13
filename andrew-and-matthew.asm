@@ -92,46 +92,47 @@ LCD_D6 EQU P1.4
 LCD_D7 EQU P1.6
 
 ; List of sound bite index
-DegC 	equ 1
-one 	equ 2
-two 	equ 3
-three 	equ 4
-four 	equ 5
-five 	equ 6
-six 	equ 7
-seven 	equ 8
-eight 	equ 9 
-nine 	equ 10
-ten 	equ 11
-eleven 	equ 12 
-twelve 	equ 13
-thirteen equ 14
-fourteen equ 15
-fifteen	equ 16
-sixteen equ 17
-seventeen equ 18
-eighteen equ 19
-nineteen equ 20
-twenty equ 21
-thirty equ 22
-fourty equ 23
-fifty equ 24
-sixty equ 25
-seventy equ 26
-eighty equ 27
-ninety equ 28
-hundred equ 29
-twohund equ 30
-threehund equ 31
-RtoS equ 32
-PheatS equ 33
-RtoP equ 34
-Reflow equ 35
-Cooling equ 36
-Stop equ 37
-Warning equ 38 
-didntreach equ 39
-abortion equ 40
+DegC 	equ 0
+one 	equ 1
+two 	equ 2
+three 	equ 3
+four 	equ 4
+five 	equ 5
+six 	equ 6
+seven 	equ 7
+eight 	equ 8 
+nine 	equ 9
+ten 	equ 10
+eleven 	equ 11 
+twelve 	equ 12
+thirteen equ 13
+fourteen equ 14
+fifteen	equ 15
+sixteen equ 16
+seventeen equ 17
+eighteen equ 18
+nineteen equ 19
+twenty equ 20
+thirty equ 21
+fourty equ 22
+fifty equ 23
+sixty equ 24
+seventy equ 25
+eighty equ 28
+ninety equ 29
+hundred equ 30
+twohund equ 31
+threehund equ 32
+RtoS equ 33
+PheatS equ 34
+RtoP equ 35
+Reflow equ 36
+Cooling equ 37
+Start equ 38
+Stop equ 39
+Warning equ 40 
+didntreach equ 41
+abortion equ 42
 
 org 0x0000 ; Reset vector
     ljmp MainProgram
@@ -898,7 +899,7 @@ FSM_2: ; Preheat/soak
 	clr voice_flag2
 	setb voice_flag1
 	; Announce the state
-	mov a, #PheatS
+	mov a, #RtoS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
@@ -922,7 +923,7 @@ FSM_3: ; Ramp to peak
 	clr voice_flag3
 	setb voice_flag2
 	; Announce the state
-	mov a, #RtoP
+	mov a, #RtoS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
