@@ -62,6 +62,7 @@ TEMP_THRESHOLD 	EQU 500
 
 FLASH_CE    EQU P2.4
 SOUND       EQU P2.7
+OVEN_PIN	EQU P2.6
 
 ; Commands supported by the SPI flash memory according to the datasheet
 WRITE_ENABLE     EQU 0x06  ; Address:0 Dummy:0 Num:0
@@ -626,12 +627,12 @@ Sum_loop0:
 
 Display_ADC_Values:
 	; Analog input to pin P0.0
-	; mov x+0, AD0DAT2
-	; mov x+1, #0
-	; mov x+2, #0
-	; mov x+3, #0
+	mov x+0, AD0DAT3
+	mov x+1, #0
+	mov x+2, #0
+	mov x+3, #0
 
-	lcall Average_AD0DAT2
+	;lcall Average_AD0DAT2
 
 	Load_y(368)
 	lcall mul32
@@ -639,8 +640,14 @@ Display_ADC_Values:
 	Load_y(255)
 	lcall div32
 
+	Load_y(20)
+	lcall add32
+
+	mov a, x+0
+	mov Var_temp, a
+
 	lcall Hex2BCD
-	Set_Cursor(1, 1)
+	Set_Cursor(1, 12)
 	lcall LCD_3BCD
 
 	; Some delay so the LCD looks ok
@@ -825,7 +832,7 @@ MainProgram:
 	clr SOUND ; Turn speaker off
 	
 	; Initialize variables
-	mov SoundINDEX, #0
+	setb OVEN_PIN
 
 	;;Set_Cursor(1, 1)
     ;;Send_Constant_String(#Line1)
@@ -857,6 +864,7 @@ abortSkip:
     lcall Regular_display
 
 FSM_0: ; Idle
+	setb OVEN_PIN
 	setb voice_flag5
     cjne a, #0, FSM_1
     mov Var_power, #0
@@ -875,14 +883,17 @@ FSM_1: ; Ramp to soak
 	jnb voice_flag1, Skip_voice1
 	clr voice_flag1
 	; Announce the state
+	push acc
 	mov a, #RtoS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
-	clr SOUND
+	pop acc
 	;
 Skip_voice1: 
+	;clr OVEN_PIN
+    ;lcall Display_ADC_Values
     cjne a, #1, FSM_2
-    mov Var_power, #100
+	mov Var_power, #100
     mov a, Var_temp
     cjne a, Temp_soak, FSM_1b
     sjmp FSM_1a
@@ -895,16 +906,19 @@ FSM_1a:
     ljmp FSM_done
 
 FSM_2: ; Preheat/soak
+
 	jnb voice_flag2, Skip_voice2
 	clr voice_flag2
 	setb voice_flag1
 	; Announce the state
+	push acc
 	mov a, #RtoS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
-	clr SOUND
+	pop acc
 	;
 Skip_voice2:
+clr OVEN_PIN
     cjne a, #2, FSM_3
     mov Var_power, #20
     mov a, Var_sec
@@ -919,14 +933,16 @@ FSM_2a:
     ljmp FSM_done
 
 FSM_3: ; Ramp to peak
+	lcall Display_ADC_Values
 	jnb voice_flag3, Skip_voice3
 	clr voice_flag3
 	setb voice_flag2
 	; Announce the state
+	push acc
 	mov a, #RtoS
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
-	clr SOUND
+	pop acc
 	;
 Skip_voice3:
     cjne a, #3, FSM_4
@@ -947,10 +963,11 @@ FSM_4: ; Heating at peak
 	clr voice_flag4
 	setb voice_flag3
 	; Announce the state
+	push acc
 	mov a, #Reflow
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
-	clr SOUND
+	pop acc
 	;
 Skip_voice4:
     cjne a, #4, FSM_5
@@ -971,10 +988,11 @@ FSM_5: ; Cooling down
 	clr voice_flag5
 	setb voice_flag4
 	; Announce the state
+	push acc
 	mov a, #Cooling
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
-	clr SOUND
+	pop acc
 	;
 Skip_voice5:
     cjne a, #5, FSM_done

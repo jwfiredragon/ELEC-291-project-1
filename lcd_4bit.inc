@@ -26,22 +26,27 @@ skip_change:
     Set_Cursor(2,1)
     cjne a,#5,next_line4
     Send_Constant_String(#message5)
+    lcall Display_ADC_Values
     ljmp skip_display
 next_line4:
     cjne a,#4,next_line3
     Send_Constant_String(#message4)
+    lcall Display_ADC_Values
     ljmp skip_display
 next_line3:
     cjne a,#3,next_line2
     Send_Constant_String(#message3)
+    lcall Display_ADC_Values
     ljmp skip_display
 next_line2:
     cjne a,#2,next_line1
     Send_Constant_String(#message2)
+    lcall Display_ADC_Values
     ljmp skip_display
 next_line1:
     cjne a,#1,next_line0
     Send_Constant_String(#message1)
+    lcall Display_ADC_Values
     ljmp skip_display
 next_line0:
     Send_Constant_String(#message0)
