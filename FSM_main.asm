@@ -272,7 +272,7 @@ main:
     ;;Set_Cursor(1,1)
     ;;Send_Constant_String(#temp_message)
 	; initialize
-    mov SP, #7FH
+    mov SP, #0x7F
     lcall LCD_4BIT
  	lcall Timer0_Init ;enable timer0 interrupt
  	lcall emergency_ISR_Init ;enable pin12 emergency stop
