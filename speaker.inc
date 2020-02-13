@@ -1,5 +1,7 @@
 ; Audio bits
-; Celcius. 1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12. 13. 14. 15. 16. 17. 18. 19. 20. 30. 40. 50. 60. 70. 80. 90. 100. 200. 300. Ramp to soak. Preheat/Soak. Ramp to peak. Reflow. Cooling. Start. Stop. Warning, critical temperature!. Didn't reach the temperature in 60 seconds. Process aborted.
+; Degrees Celcius. 1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12. 13. 14. 15. 16. 17. 18. 19. 
+; 20. 30. 40. 50. 60. 70. 80. 90. 100. 200. 300. Ramp to soak. Preheat/Soak. Ramp to peak. 
+; Reflow. Cooling. Start. Stop. Warning, critical temperature!. Didn't reach the temperature in 60 seconds. Process aborted.
 ; LisaV3 (https://text-to-speech-demo.ng.bluemix.net/)
 
 ; Command prompt
