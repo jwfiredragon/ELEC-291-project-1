@@ -1,28 +1,71 @@
 ; dseg
-; Display_number: ds 1 ;set Display_number as 1 byte variable
+; bcd: ds 1 ;set bcd as 1 byte variable
 ; bseg
 ; Change_flag:ds 1;1= updated,0=not udapted
 ; cseg
 cseg
 
-ChangeDisplay mac
-; ChangeDisplay(%0)
-
-    mov a, %0  ;mov mac to a
-    da a        ;change to hex
-    mov Display_number,a ;mov to display_number
+DisplayEdit:
+    WriteCommand(#0x01)
+    Wait_Milli_Seconds(#5)
+    mov a, Val_to_set
+    cjne a, #0, next_edit1
+    mov a, Temp_soak
+    da a
+    mov bcd, a
     Set_Cursor(1,1)
-    Send_Constant_String(#temp_message)
+    Send_Constant_String(#tempsoak_message)
     Set_Cursor(2,1)
-    Display_BCD(Display_number) ;display to lcd
-endmac
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit1:
+    cjne a, #1, next_edit2
+    mov a, Time_soak
+    da a
+    mov bcd, a
+    Set_Cursor(1,1)
+    Send_Constant_String(#timesoak_message)
+    Set_Cursor(2,1)
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit2:
+    cjne a, #2, next_edit3
+    mov a, Temp_peak
+    da a
+    mov bcd, a
+    Set_Cursor(1,1)
+    Send_Constant_String(#temppeak_message)
+    Set_Cursor(2,1)
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit3:
+    cjne a, #3, next_edit4
+    mov a, Time_peak
+    da a
+    mov bcd, a
+    Set_Cursor(1,1)
+    Send_Constant_String(#timepeak_message)
+    Set_Cursor(2,1)
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit4:
+    cjne a, #4, end_edit
+    mov a, Temp_cool
+    da a
+    mov bcd, a
+    Set_Cursor(1,1)
+    Send_Constant_String(#tempcool_message)
+    Set_Cursor(2,1)
+    lcall LCD_3BCD
+end_edit:
+    ret
 
 Regular_display:    ;if updated clear screen
-	 mov a, Change_flag
-    cjne a,#0x00,skip_change
     WriteCommand(#0x01)
     ;Wait for clear screen command to finish. Usually takes 1.52ms.
     Wait_Milli_Seconds(#5) ;wait 5ms
+	mov a, Change_flag
+    cjne a,#0x00,skip_change
     mov Change_flag,#0x01
 skip_change:
     ;mov a,Var_temp
@@ -30,7 +73,7 @@ skip_change:
     ;mov Var_temp,a
     ;display what state it is in
     Set_Cursor(1,1)
-    Send_Constant_string(#message_intro)
+    Send_Constant_string(#temp_message)
     ;Display_BCD(temp)
     mov a, FSM_state
     Set_Cursor(2,1)

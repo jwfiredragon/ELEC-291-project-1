@@ -81,7 +81,6 @@ TEMP_READ   EQU P2.7
 BTN_START   EQU P0.2 ; TODO: assign port
 BTN_SETVAL  EQU P0.1
 BTN_INCR    EQU P0.3
-;;BTN_DECR    EQU 1
 
 ; These 'equ' must match the wiring between the microcontroller and the LCD!
 LCD_RS EQU P0.5
@@ -147,9 +146,13 @@ message2: db 'Preheat/soak',0
 message3: db 'Ramp to peak',0
 message4: db 'Heating at peak',0
 message5: db 'Cooling Down',0
-temp_message: db 'temperature is: ',0
-Time_message: db 'Duration:', 0
-message_intro: db 'HELLO', 0
+tempsoak_message: db 'Soak temp: ',0
+timesoak_message: db 'Soak time: ',0
+temppeak_message: db 'Peak temp: ',0
+timepeak_message: db 'Peak time: ',0
+tempcool_message: db 'Cool temp: ',0
+time_message: db 'Time:', 0
+temp_message: db 'Temp:', 0
 
 Line1: db 'CH3 CH2 CH1 CH0', 0
 Line2: db 'xxx xxx xxx xxx', 0
@@ -602,64 +605,63 @@ Incr_value:
     mov a, Val_to_set
     cjne a, #0, IV1
     mov a, Temp_soak
-    ChangeDisplay(Temp_soak)
     cjne a, #255, IV0a
+	mov Temp_soak, #0
     ret
 IV0a:
-    add a, #0x01
+    add a, #1
     da a
     mov Temp_soak, a
     ret
 IV1:
     cjne a, #1, IV2
     mov a, Time_soak
-    ChangeDisplay(Time_soak)
     cjne a, #255, IV1a
+	mov Temp_soak, #0
     ret
 IV1a:
-    add a, #0x01
+    add a, #1
     da a
     mov Time_soak, a
     ret
 IV2:
     cjne a, #2, IV3
     mov a, Temp_peak
-    ChangeDisplay(Temp_peak)
     cjne a, #255, IV2a
+	mov Temp_soak, #0
     ret
 IV2a:
-    add a, #0x01
+    add a, #1
     da a
     mov Temp_peak, a
     ret
 IV3:
     cjne a, #3, IV4
     mov a, Time_peak
-    ChangeDisplay(Time_peak)
     cjne a, #255, IV3a
+	mov Temp_soak, #0
     ret
 IV3a:
-    add a, #0x01
+    add a, #1
     da a
     mov Time_peak, a
     ret
 IV4:
     cjne a, #4, IV5
     mov a, Temp_cool
-    ChangeDisplay(Temp_cool)
     cjne a, #255, IV4a
+	mov Temp_soak, #0
     ret
 IV4a:
-    add a, #0x01
+    add a, #1
     da a
     mov Temp_cool, a
     ret
 IV5:
     ret
 
-
-
 Set_Reflow_Params:
+    lcall DisplayEdit
     ; If SETVAL button is pressed, change variable to be incremented
 	jb BTN_SETVAL, SRP1
 	Wait_Milli_Seconds(#50)
@@ -682,13 +684,6 @@ SRP1:
 	;;jnb BTN_INCR, $
     lcall Incr_value
 SRP2:
-    ; if DECR is pressed, subtract one from current variable (minimum of 0)
-    ;;jb BTN_DECR, SRP3
-	;;Wait_Milli_Seconds(#100)
-	;;jb BTN_DECR, SRP3
-	;;jnb BTN_DECR, $
-    ;;lcall Decr_Value
-SRP3:
     ret
 
 ;---------------------------------;
@@ -832,7 +827,7 @@ FSM_done:
 
 	;cpl P2.6
 
-	Wait_Milli_Seconds(#250)
+	Wait_Milli_Seconds(#200)
 
 	ljmp forever_loop
 	
