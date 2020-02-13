@@ -5,60 +5,7 @@
 ; cseg
 cseg
 
-DisplayEdit:
-    WriteCommand(#0x01)
-    Wait_Milli_Seconds(#5)
-    mov a, Val_to_set
-    cjne a, #0, next_edit1
-    mov a, Temp_soak
-    da a
-    mov bcd, a
-    Set_Cursor(1,1)
-    Send_Constant_String(#tempsoak_message)
-    Set_Cursor(2,1)
-    lcall LCD_3BCD
-    ljmp end_edit
-next_edit1:
-    cjne a, #1, next_edit2
-    mov a, Time_soak
-    da a
-    mov bcd, a
-    Set_Cursor(1,1)
-    Send_Constant_String(#timesoak_message)
-    Set_Cursor(2,1)
-    lcall LCD_3BCD
-    ljmp end_edit
-next_edit2:
-    cjne a, #2, next_edit3
-    mov a, Temp_peak
-    da a
-    mov bcd, a
-    Set_Cursor(1,1)
-    Send_Constant_String(#temppeak_message)
-    Set_Cursor(2,1)
-    lcall LCD_3BCD
-    ljmp end_edit
-next_edit3:
-    cjne a, #3, next_edit4
-    mov a, Time_peak
-    da a
-    mov bcd, a
-    Set_Cursor(1,1)
-    Send_Constant_String(#timepeak_message)
-    Set_Cursor(2,1)
-    lcall LCD_3BCD
-    ljmp end_edit
-next_edit4:
-    cjne a, #4, end_edit
-    mov a, Temp_cool
-    da a
-    mov bcd, a
-    Set_Cursor(1,1)
-    Send_Constant_String(#tempcool_message)
-    Set_Cursor(2,1)
-    lcall LCD_3BCD
-end_edit:
-    ret
+
 
 Regular_display:    ;if updated clear screen
     WriteCommand(#0x01)

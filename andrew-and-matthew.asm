@@ -605,7 +605,7 @@ Incr_value:
     mov a, Val_to_set
     cjne a, #0, IV1
     mov a, Temp_soak
-    cjne a, #255, IV0a
+    cjne a, #1, IV0a
 	mov Temp_soak, #0
     ret
 IV0a:
@@ -686,6 +686,72 @@ SRP1:
 SRP2:
     ret
 
+DisplayEdit:
+    WriteCommand(#0x01)
+    Wait_Milli_Seconds(#5)
+    mov a, Val_to_set
+    cjne a, #0, next_edit1
+    
+    Set_Cursor(1,1)
+    Send_Constant_String(#tempsoak_message)
+    Set_Cursor(2,1)
+    mov x+0, Temp_soak
+	mov x+1, #0
+	mov x+2, #0
+	mov x+3, #0
+	lcall Hex2BCD
+	lcall LCD_3BCD
+    ljmp end_edit
+next_edit1:
+    cjne a, #1, next_edit2
+    Set_Cursor(1,1)
+    Send_Constant_String(#timesoak_message)
+    Set_Cursor(2,1)
+    mov x+0, Time_soak
+	mov x+1, #0
+	mov x+2, #0
+	mov x+3, #0
+	lcall Hex2BCD
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit2:
+    cjne a, #2, next_edit3
+    Set_Cursor(1,1)
+    Send_Constant_String(#temppeak_message)
+    Set_Cursor(2,1)
+    mov x+0, Temp_peak
+	mov x+1, #0
+	mov x+2, #0
+	mov x+3, #0
+	lcall Hex2BCD
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit3:
+    cjne a, #3, next_edit4
+    Set_Cursor(1,1)
+    Send_Constant_String(#timepeak_message)
+    Set_Cursor(2,1)
+    mov x+0, Time_peak
+	mov x+1, #0
+	mov x+2, #0
+	mov x+3, #0
+	lcall Hex2BCD
+    lcall LCD_3BCD
+    ljmp end_edit
+next_edit4:
+    cjne a, #4, end_edit
+    Set_Cursor(1,1)
+    Send_Constant_String(#tempcool_message)
+    Set_Cursor(2,1)
+    mov x+0, Temp_cool
+	mov x+1, #0
+	mov x+2, #0
+	mov x+3, #0
+	lcall Hex2BCD
+    lcall LCD_3BCD
+end_edit:
+    ret
+    
 ;---------------------------------;
 ; Main program. Includes hardware ;
 ; initialization and 'forever'    ;
