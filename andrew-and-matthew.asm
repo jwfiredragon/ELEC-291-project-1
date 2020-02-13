@@ -91,6 +91,48 @@ LCD_D5 EQU P3.1
 LCD_D6 EQU P1.4
 LCD_D7 EQU P1.6
 
+; List of sound bite index
+DegC 	equ 1
+one 	equ 2
+two 	equ 3
+three 	equ 4
+four 	equ 5
+five 	equ 6
+six 	equ 7
+seven 	equ 8
+eight 	equ 9 
+nine 	equ 10
+ten 	equ 11
+eleven 	equ 12 
+twelve 	equ 13
+thirteen equ 14
+fourteen equ 15
+fifteen	equ 16
+sixteen equ 17
+seventeen equ 18
+eighteen equ 19
+nineteen equ 20
+twenty equ 21
+thirty equ 22
+fourty equ 23
+fifty equ 24
+sixty equ 25
+seventy equ 26
+eighty equ 27
+ninety equ 28
+hundred equ 29
+twohund equ 30
+threehund equ 31
+RtoS equ 32
+PheatS equ 33
+RtoP equ 34
+Reflow equ 35
+Cooling equ 36
+Stop equ 37
+Warning equ 38 
+didntreach equ 39
+abortion equ 40
+
 org 0x0000 ; Reset vector
     ljmp MainProgram
 
@@ -817,6 +859,12 @@ FSM_0a:
     ljmp FSM_done
 
 FSM_1: ; Ramp to soak
+	; Announce the state
+	mov a, #RtoS
+	lcall Play_Sound_Using_Index
+	jb TMOD20, $ ; Wait for sound to finish playing
+	clr SOUND
+	; 
     cjne a, #1, FSM_2
     mov Var_power, #100
     mov a, Var_temp
@@ -831,6 +879,12 @@ FSM_1a:
     ljmp FSM_done
 
 FSM_2: ; Preheat/soak
+	; Announce the state
+	mov a, #PheatS
+	lcall Play_Sound_Using_Index
+	jb TMOD20, $ ; Wait for sound to finish playing
+	clr SOUND
+	;
     cjne a, #2, FSM_3
     mov Var_power, #20
     mov a, Var_sec
@@ -845,6 +899,12 @@ FSM_2a:
     ljmp FSM_done
 
 FSM_3: ; Ramp to peak
+	; Announce the state
+	mov a, #RtoP
+	lcall Play_Sound_Using_Index
+	jb TMOD20, $ ; Wait for sound to finish playing
+	clr SOUND
+	;
     cjne a, #3, FSM_4
     mov Var_power, #100
     mov a, Var_temp
@@ -859,6 +919,12 @@ FSM_3a:
     ljmp FSM_done
 
 FSM_4: ; Heating at peak
+	; Announce the state
+	mov a, #Reflow
+	lcall Play_Sound_Using_Index
+	jb TMOD20, $ ; Wait for sound to finish playing
+	clr SOUND
+	;
     cjne a, #4, FSM_5
     mov Var_power, #20
     mov a, Var_sec
@@ -873,6 +939,12 @@ FSM_4a:
     ljmp FSM_done
 
 FSM_5: ; Cooling down
+	; Announce the state
+	mov a, #Cooling
+	lcall Play_Sound_Using_Index
+	jb TMOD20, $ ; Wait for sound to finish playing
+	clr SOUND
+	;
     cjne a, #5, FSM_done
     mov Var_power, #0
     mov a, Var_temp
@@ -890,8 +962,6 @@ FSM_5a:
 FSM_done:
 
 	;lcall Display_ADC_Values
-
-	;cpl P2.6
 
 	Wait_Milli_Seconds(#200)
 
