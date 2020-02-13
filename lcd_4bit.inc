@@ -28,35 +28,35 @@ skip_change:
     Send_Constant_String(#message5)
     lcall Display_ADC_Values
     Set_Cursor(2, 14)     ; the place in the LCD where we want the BCD counter value
-	Display_BCD(BCD_counter) ; This macro is also in 'LCD_4bit_LPC9351.inc'
+	Display_BCD(var_sec) ; This macro is also in 'LCD_4bit_LPC9351.inc'
     ljmp skip_display
 next_line4:
     cjne a,#4,next_line3
     Send_Constant_String(#message4)
     lcall Display_ADC_Values
     Set_Cursor(2, 14)     ; the place in the LCD where we want the BCD counter value
-	Display_BCD(BCD_counter) ; This macro is also in 'LCD_4bit_LPC9351.inc'
+	Display_BCD(var_sec) ; This macro is also in 'LCD_4bit_LPC9351.inc'
     ljmp skip_display
 next_line3:
     cjne a,#3,next_line2
     Send_Constant_String(#message3)
     lcall Display_ADC_Values
     Set_Cursor(2, 14)     ; the place in the LCD where we want the BCD counter value
-	Display_BCD(BCD_counter) ; This macro is also in 'LCD_4bit_LPC9351.inc'
+	Display_BCD(var_sec) ; This macro is also in 'LCD_4bit_LPC9351.inc'
     ljmp skip_display
 next_line2:
     cjne a,#2,next_line1
     Send_Constant_String(#message2)
     lcall Display_ADC_Values
     Set_Cursor(2, 14)     ; the place in the LCD where we want the BCD counter value
-	Display_BCD(BCD_counter) ; This macro is also in 'LCD_4bit_LPC9351.inc'
+	Display_BCD(var_sec) ; This macro is also in 'LCD_4bit_LPC9351.inc'
     ljmp skip_display
 next_line1:
     cjne a,#1,next_line0
     Send_Constant_String(#message1)
     lcall Display_ADC_Values
     Set_Cursor(2, 14)     ; the place in the LCD where we want the BCD counter value
-	Display_BCD(BCD_counter) ; This macro is also in 'LCD_4bit_LPC9351.inc'
+	Display_BCD(var_sec) ; This macro is also in 'LCD_4bit_LPC9351.inc'
     ljmp skip_display
 next_line0:
     Send_Constant_String(#message0)
