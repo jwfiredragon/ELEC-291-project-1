@@ -140,15 +140,15 @@ Change_flag: dbit 1
 
 cseg
 
-message0: db 'Current stage: Idle',0
-message1: db 'Current stage: Ramp to soak',0
-message2: db 'Current stage: Preheat/soak',0
-message3: db 'Current stage: Ramp to peak',0
-message4: db 'Current stage: Heating at peak',0
-message5: db 'Current stage: Cooling Down',0
-temp_message: db 'temperature is: ',0
-Time_message: db 'Duration:', 0
-message_intro: db 'frick!', 0
+ message_intro:db 'Temp/Mode:',0
+ message0: db 'Idle',0
+ message1: db 'Ramp to soak',0
+ message2: db 'Preheat/soak',0
+ message3: db 'Ramp to peak',0
+ message4: db 'Heating at peak',0
+ message5: db 'Cooling Down',0
+ temp_message: db 'Temperature Edit:',0
+ Time_message: db 'Duration:',0
 
 Line1: db 'CH3 CH2 CH1 CH0', 0
 Line2: db 'xxx xxx xxx xxx', 0
@@ -156,13 +156,12 @@ Line2: db 'xxx xxx xxx xxx', 0
 $NOLIST
 $include(LCD_4bit_LPC9351.inc) ; A library of LCD related functions and utility macros
 $include(lcd_4bit.inc)
-$include(speaker.inc)
 $include(math32.inc)
 $LIST
 
 ; interrupt stuff here
 emergency_ISR_Init:
-	setb EX0
+	setb EX0    
 	ret
 
 emergency_ISR:
@@ -595,6 +594,15 @@ Display_ADC_Values:
 	Wait_Milli_Seconds(#250)
 	ret
 
+Wait1S:
+	mov R2, #80
+Ls3:	mov R1, #250
+Ls2:	mov R0, #184
+Ls1:	djnz R0, Ls1 ; 2 machine cycles-> 2*0.27126us/2*184=50us
+	djnz R1, Ls2 ; 100us*250=0.0125s
+	djnz R2, Ls3 ; 0.0125s*80=1s
+	ret
+
 ; ; What's this?????
 
 ; Incr_value:
@@ -774,18 +782,16 @@ MainProgram:
 	; Initialize variables
 	mov SoundINDEX, #0
 
-	Set_Cursor(1, 1)
-    Send_Constant_String(#Line1)
-	Set_Cursor(2, 1)
-    Send_Constant_String(#Line2)
+	;Set_Cursor(1, 1)
+    ;Send_Constant_String(#Line1)
+	;Set_Cursor(2, 1)
+    ;Send_Constant_String(#Line2)
+    mov a,#0x00
 	
 forever_loop:
-	lcall Display_ADC_Values
 
-	cpl P2.6
-
-	Wait_Milli_Seconds(#250)
 
 	ljmp forever_loop
+
 	
 END
