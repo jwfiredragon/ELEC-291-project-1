@@ -92,46 +92,46 @@ LCD_D6 EQU P1.4
 LCD_D7 EQU P1.6
 
 ; List of sound bite index
-DegC 	equ 1
-one 	equ 2
-two 	equ 3
-three 	equ 4
-four 	equ 5
-five 	equ 6
-six 	equ 7
-seven 	equ 8
-eight 	equ 9 
-nine 	equ 10
-ten 	equ 11
-eleven 	equ 12 
-twelve 	equ 13
-thirteen equ 14
-fourteen equ 15
-fifteen	equ 16
-sixteen equ 17
-seventeen equ 18
-eighteen equ 19
-nineteen equ 20
-twenty equ 21
-thirty equ 22
-fourty equ 23
-fifty equ 24
-sixty equ 25
-seventy equ 26
-eighty equ 27
-ninety equ 28
-hundred equ 29
-twohund equ 30
-threehund equ 31
-RtoS equ 32
-PheatS equ 33
-RtoP equ 34
-Reflow equ 35
-Cooling equ 36
-Stop equ 37
-Warning equ 38 
-didntreach equ 39
-abortion equ 40
+DegC 	equ 0
+one 	equ 1
+two 	equ 2
+three 	equ 3
+four 	equ 4
+five 	equ 5
+six 	equ 6
+seven 	equ 7
+eight 	equ 8 
+nine 	equ 9
+ten 	equ 10
+eleven 	equ 11 
+twelve 	equ 12
+thirteen equ 13
+fourteen equ 14
+fifteen	equ 15
+sixteen equ 16
+seventeen equ 17
+eighteen equ 18
+nineteen equ 19
+twenty equ 20
+thirty equ 21
+fourty equ 22
+fifty equ 23
+sixty equ 24
+seventy equ 25
+eighty equ 26
+ninety equ 27
+hundred equ 28
+twohund equ 29
+threehund equ 30
+RtoS equ 31
+PheatS equ 32
+RtoP equ 33
+Reflow equ 34
+Cooling equ 35
+Stop equ 36
+Warning equ 37 
+didntreach equ 38
+abortion equ 39
 
 org 0x0000 ; Reset vector
     ljmp MainProgram
@@ -179,11 +179,6 @@ bseg
 mf: dbit 1
 emergency_shutoff: dbit 1
 Change_flag: dbit 1
-voice_flag1: dbit 1
-voice_flag2: dbit 1
-voice_flag3: dbit 1
-voice_flag4: dbit 1
-voice_flag5: dbit 1
 
 cseg
 
@@ -840,12 +835,6 @@ MainProgram:
 
     mov Val_to_set, #0
     mov FSM_state, #0
-
-	setb voice_flag1
-	setb voice_flag2
-	setb voice_flag3
-	setb voice_flag4
-	setb voice_flag5
 	
 forever_loop:
 	;jnb emergency_shutoff, abortSkip
@@ -856,7 +845,6 @@ abortSkip:
     lcall Regular_display
 
 FSM_0: ; Idle
-	setb voice_flag5
     cjne a, #0, FSM_1
     mov Var_power, #0
     lcall Set_Reflow_Params
@@ -871,15 +859,12 @@ FSM_0a:
     ljmp FSM_done
 
 FSM_1: ; Ramp to soak
-	jnb voice_flag1, Skip_voice1
-	clr voice_flag1
 	; Announce the state
-	mov a, #RtoS
+	mov a, #0
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
-	;
-Skip_voice1: 
+	; 
     cjne a, #1, FSM_2
     mov Var_power, #100
     mov a, Var_temp
@@ -894,16 +879,12 @@ FSM_1a:
     ljmp FSM_done
 
 FSM_2: ; Preheat/soak
-	jnb voice_flag2, Skip_voice2
-	clr voice_flag2
-	setb voice_flag1
 	; Announce the state
-	mov a, #PheatS
+	mov a, #0
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
-Skip_voice2:
     cjne a, #2, FSM_3
     mov Var_power, #20
     mov a, Var_sec
@@ -918,16 +899,12 @@ FSM_2a:
     ljmp FSM_done
 
 FSM_3: ; Ramp to peak
-	jnb voice_flag3, Skip_voice3
-	clr voice_flag3
-	setb voice_flag2
 	; Announce the state
 	mov a, #RtoP
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
-Skip_voice3:
     cjne a, #3, FSM_4
     mov Var_power, #100
     mov a, Var_temp
@@ -942,16 +919,12 @@ FSM_3a:
     ljmp FSM_done
 
 FSM_4: ; Heating at peak
-	jnb voice_flag4, Skip_voice4
-	clr voice_flag4
-	setb voice_flag3
 	; Announce the state
 	mov a, #Reflow
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
-Skip_voice4:
     cjne a, #4, FSM_5
     mov Var_power, #20
     mov a, Var_sec
@@ -966,16 +939,12 @@ FSM_4a:
     ljmp FSM_done
 
 FSM_5: ; Cooling down
-	jnb voice_flag5, Skip_voice5
-	clr voice_flag5
-	setb voice_flag4
 	; Announce the state
 	mov a, #Cooling
 	lcall Play_Sound_Using_Index
 	jb TMOD20, $ ; Wait for sound to finish playing
 	clr SOUND
 	;
-Skip_voice5:
     cjne a, #5, FSM_done
     mov Var_power, #0
     mov a, Var_temp
