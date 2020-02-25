@@ -211,6 +211,10 @@ timepeak_message: db 'Peak time: ',0
 tempcool_message: db 'Cool temp: ',0
 time_message: db 'Time:', 0
 temp_message: db 'Temp:', 0
+ 
+Hello_World:
+    DB  '\r', '\n', 0
+ 
 
 Line1: db 'CH3 CH2 CH1 CH0', 0
 Line2: db 'xxx xxx xxx xxx', 0
@@ -728,7 +732,9 @@ Display_ADC_Values:
 	lcall Hex2BCD
 	Set_Cursor(1, 12)
 	lcall LCD_3BCD
-
+    Send_BCD(bcd)
+    mov DPTR, #Hello_World
+    lcall SendString
 	; Some delay so the LCD looks ok
 	Wait_Milli_Seconds(#250)
 	ret
@@ -951,7 +957,7 @@ FSM_0: ; Idle
     setb OVEN_PIN
 	setb voice_flag5
     mov Var_power, #0
-   ; lcall Set_Reflow_Params
+    lcall Set_Reflow_Params
 	jb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
 	Wait_Milli_Seconds(#50)	; Debounce delay.  This macro is also in 'LCD_4bit.inc'
 	jb BTN_START, FSM_0a  ; if the 'RESET' button is not pressed skip
@@ -1157,7 +1163,6 @@ FSM_done:
 	;lcall Display_ADC_Values
 
 	Wait_Milli_Seconds(#200)
-
 	ljmp forever_loop
 	
 END
